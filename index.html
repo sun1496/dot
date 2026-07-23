@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>좌표평면</title>
+  <title>두 점이 만나 생기는 하나</title>
 
   <style>
     * {
@@ -12,246 +12,996 @@
 
     body {
       margin: 0;
-      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .title-box {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .title-box h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      font-weight: 700;
+    }
+
+    .title-box p {
+      margin: 0;
+      color: #4b5563;
+      font-size: 15px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel,
+    .leaderboard-panel {
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+    }
+
+    .question-box {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .question-number {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .question-text {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.4;
+      min-height: 34px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .status-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .status-card.time-card {
+      background: #dbeafe;
+    }
+
+    .status-card.solved-card {
+      background: #dcfce7;
+    }
+
+    .status-card.score-card {
+      background: #fef3c7;
+    }
+
+    .status-card.remaining-card {
+      background: #f3e8ff;
+    }
+
+    .status-label {
+      font-size: 13px;
+      color: #4b5563;
+      margin-bottom: 6px;
+    }
+
+    .status-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .canvas-wrap {
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: #ffffff;
     }
 
-    .coordinate-plane-container {
-      width: min(92vw, 760px);
+    .plane-box {
+      width: min(100%, 760px);
       aspect-ratio: 1 / 1;
-      background-color: #ffffff;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
     }
 
-    #coordinate-plane {
+    canvas {
       display: block;
       width: 100%;
       height: 100%;
-      background-color: #ffffff;
+      background: #ffffff;
+      cursor: crosshair;
+      touch-action: manipulation;
     }
 
-    .grid-line {
-      stroke: #d9d9d9;
-      stroke-width: 1;
-      vector-effect: non-scaling-stroke;
-    }
-
-    .axis-line {
-      stroke: #000000;
-      stroke-width: 2.5;
-      vector-effect: non-scaling-stroke;
-    }
-
-    .number-label {
-      fill: #000000;
-      font-family: Arial, "Noto Sans KR", sans-serif;
-      font-size: 14px;
-      user-select: none;
-    }
-
-    .origin-label {
-      fill: #000000;
-      font-family: "Times New Roman", Times, serif;
+    .feedback {
+      margin-top: 16px;
+      min-height: 28px;
+      text-align: center;
       font-size: 18px;
-      font-style: normal;
-      user-select: none;
+      font-weight: 700;
     }
 
-    .axis-name {
-      fill: #000000;
-      font-family: "Times New Roman", Times, serif;
-      font-size: 21px;
-      font-style: italic;
-      user-select: none;
+    .feedback.correct {
+      color: #2563eb;
+    }
+
+    .feedback.wrong {
+      color: #dc2626;
+    }
+
+    .feedback.timeout {
+      color: #b45309;
+    }
+
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #111827;
+      color: #ffffff;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .result-box {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #111827;
+      min-height: 30px;
+    }
+
+    .leaderboard-panel h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .leaderboard-desc {
+      margin: 0 0 16px;
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .leaderboard-table-wrap {
+      overflow-x: auto;
+    }
+
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .leaderboard-table th {
+      background: #f9fafb;
+      font-weight: 700;
+    }
+
+    .leaderboard-empty {
+      padding: 18px 10px;
+      text-align: center;
+      color: #6b7280;
+      background: #f9fafb;
+      border: 1px dashed #d1d5db;
+      border-radius: 12px;
+    }
+
+    .small-button {
+      width: 100%;
+      margin-top: 14px;
+      background: #374151;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .title-box h1 {
+        font-size: 28px;
+      }
+
+      .question-text {
+        font-size: 20px;
+      }
+
+      .status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .status-value {
+        font-size: 22px;
+      }
     }
   </style>
 </head>
-
 <body>
-  <div class="coordinate-plane-container">
-    <svg
-      id="coordinate-plane"
-      viewBox="0 0 760 760"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="x와 y의 범위가 마이너스 10부터 10까지인 좌표평면"
-    >
-      <defs>
-        <marker
-          id="axis-arrow"
-          markerWidth="8"
-          markerHeight="8"
-          refX="7"
-          refY="4"
-          orient="auto"
-          markerUnits="strokeWidth"
-        >
-          <path d="M 0 0 L 8 4 L 0 8 Z" fill="#000000" />
-        </marker>
+  <div class="page">
+    <div class="title-box">
+      <h1>두 점이 만나 생기는 하나</h1>
+      <p>문제로 제시된 순서쌍에 해당하는 점을 좌표평면 위에 정확히 찍어 보세요.</p>
+    </div>
 
-        <clipPath id="plot-clip">
-          <rect x="60" y="60" width="640" height="640" />
-        </clipPath>
-      </defs>
+    <div class="layout">
+      <div class="panel">
+        <div class="question-box">
+          <div id="questionNumber" class="question-number">문제 1 / 10</div>
+          <div id="questionText" class="question-text">점 (0, 0)을 좌표평면에 찍으세요.</div>
+        </div>
 
-      <rect x="0" y="0" width="760" height="760" fill="#ffffff" />
+        <div class="status-grid">
+          <div class="status-card time-card">
+            <div class="status-label">남은 시간</div>
+            <div id="timeLeft" class="status-value">10.0초</div>
+          </div>
+          <div class="status-card solved-card">
+            <div class="status-label">현재까지 푼 문제 수</div>
+            <div id="solvedCount" class="status-value">0</div>
+          </div>
+          <div class="status-card score-card">
+            <div class="status-label">누적 점수</div>
+            <div id="score" class="status-value">0점</div>
+          </div>
+          <div class="status-card remaining-card">
+            <div class="status-label">남은 문제 수</div>
+            <div id="remainingCount" class="status-value">10</div>
+          </div>
+        </div>
 
-      <g id="grid"></g>
-      <g id="graph-layer" clip-path="url(#plot-clip)"></g>
-      <g id="axes"></g>
-      <g id="labels"></g>
-    </svg>
+        <div class="canvas-wrap">
+          <div class="plane-box">
+            <canvas id="coordinatePlane" width="760" height="760" aria-label="점찍기 형성평가 좌표평면"></canvas>
+          </div>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+        <div id="resultBox" class="result-box"></div>
+
+        <div class="controls">
+          <button id="restartButton" disabled>다시 게임하기</button>
+        </div>
+      </div>
+
+      <aside class="leaderboard-panel">
+        <h2>리더보드</h2>
+        <p class="leaderboard-desc">
+          10문제를 모두 풀면 최종 점수가 자동으로 기록됩니다. 상위 10개의 기록만 표시됩니다.
+        </p>
+
+        <div id="leaderboardEmpty" class="leaderboard-empty">
+          아직 기록이 없습니다.
+        </div>
+
+        <div id="leaderboardTableWrap" class="leaderboard-table-wrap" style="display: none;">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>점수</th>
+                <th>정답 수</th>
+                <th>기록 시간</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+
+        <button id="clearLeaderboardButton" class="small-button">리더보드 초기화</button>
+      </aside>
+    </div>
   </div>
 
   <script>
-    const gridGroup = document.getElementById("grid");
-    const axesGroup = document.getElementById("axes");
-    const labelsGroup = document.getElementById("labels");
+    const canvas = document.getElementById("coordinatePlane");
+    const ctx = canvas.getContext("2d");
 
-    const SVG_NS = "http://www.w3.org/2000/svg";
+    const questionNumberEl = document.getElementById("questionNumber");
+    const questionTextEl = document.getElementById("questionText");
+    const timeLeftEl = document.getElementById("timeLeft");
+    const solvedCountEl = document.getElementById("solvedCount");
+    const scoreEl = document.getElementById("score");
+    const remainingCountEl = document.getElementById("remainingCount");
+    const feedbackEl = document.getElementById("feedback");
+    const resultBoxEl = document.getElementById("resultBox");
+    const restartButton = document.getElementById("restartButton");
 
-    const minCoordinate = -10;
-    const maxCoordinate = 10;
+    const leaderboardBody = document.getElementById("leaderboardBody");
+    const leaderboardEmpty = document.getElementById("leaderboardEmpty");
+    const leaderboardTableWrap = document.getElementById("leaderboardTableWrap");
+    const clearLeaderboardButton = document.getElementById("clearLeaderboardButton");
 
-    const plotLeft = 60;
-    const plotTop = 60;
-    const plotSize = 640;
+    const LEADERBOARD_KEY = "point_quiz_leaderboard_v1";
 
-    const unit = plotSize / (maxCoordinate - minCoordinate);
+    const CONFIG = {
+      minX: -10,
+      maxX: 10,
+      minY: -10,
+      maxY: 10,
+      playableMin: -9,
+      playableMax: 9,
+      totalQuestions: 10,
+      questionTimeTenths: 100,
 
-    const plotRight = plotLeft + plotSize;
-    const plotBottom = plotTop + plotSize;
+      padding: 55,
 
-    function toSvgX(x) {
-      return plotLeft + (x - minCoordinate) * unit;
+      backgroundColor: "#ffffff",
+      gridColor: "#d9d9d9",
+      axisColor: "#000000",
+      textColor: "#000000",
+
+      correctColor: "#2563eb",
+      wrongColor: "#dc2626",
+
+      gridLineWidth: 1,
+      axisLineWidth: 2.6,
+
+      numberFont: "15px Arial, sans-serif",
+      originFont: "17px 'Times New Roman', Times, serif",
+      axisNameFont: "italic 20px 'Times New Roman', Times, serif"
+    };
+
+    const state = {
+      problems: [],
+      currentIndex: 0,
+      score: 0,
+      timerTenths: CONFIG.questionTimeTenths,
+      timerId: null,
+      acceptingInput: false,
+      selectedPoint: null,
+      correctPoint: null,
+      gameEnded: false,
+      correctCount: 0,
+      system: null,
+      transitionTimeoutId: null
+    };
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const pixelRatio = window.devicePixelRatio || 1;
+
+      canvas.width = Math.round(rect.width * pixelRatio);
+      canvas.height = Math.round(rect.height * pixelRatio);
+
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+      return {
+        width: rect.width,
+        height: rect.height
+      };
     }
 
-    function toSvgY(y) {
-      return plotBottom - (y - minCoordinate) * unit;
-    }
+    function createCoordinateSystem(width, height) {
+      const left = CONFIG.padding;
+      const right = width - CONFIG.padding;
+      const top = CONFIG.padding;
+      const bottom = height - CONFIG.padding;
 
-    function createSvgElement(tagName, attributes = {}) {
-      const element = document.createElementNS(SVG_NS, tagName);
+      const graphWidth = right - left;
+      const graphHeight = bottom - top;
 
-      Object.entries(attributes).forEach(([name, value]) => {
-        element.setAttribute(name, value);
-      });
+      const xUnit = graphWidth / (CONFIG.maxX - CONFIG.minX);
+      const yUnit = graphHeight / (CONFIG.maxY - CONFIG.minY);
 
-      return element;
-    }
-
-    function formatNumber(number) {
-      return number < 0 ? `−${Math.abs(number)}` : String(number);
-    }
-
-    for (let coordinate = minCoordinate; coordinate <= maxCoordinate; coordinate++) {
-      const x = toSvgX(coordinate);
-      const y = toSvgY(coordinate);
-
-      gridGroup.appendChild(
-        createSvgElement("line", {
-          x1: x,
-          y1: plotTop,
-          x2: x,
-          y2: plotBottom,
-          class: "grid-line"
-        })
-      );
-
-      gridGroup.appendChild(
-        createSvgElement("line", {
-          x1: plotLeft,
-          y1: y,
-          x2: plotRight,
-          y2: y,
-          class: "grid-line"
-        })
-      );
-    }
-
-    const originX = toSvgX(0);
-    const originY = toSvgY(0);
-
-    axesGroup.appendChild(
-      createSvgElement("line", {
-        x1: plotLeft,
-        y1: originY,
-        x2: plotRight + 8,
-        y2: originY,
-        class: "axis-line",
-        "marker-end": "url(#axis-arrow)"
-      })
-    );
-
-    axesGroup.appendChild(
-      createSvgElement("line", {
-        x1: originX,
-        y1: plotBottom,
-        x2: originX,
-        y2: plotTop - 8,
-        class: "axis-line",
-        "marker-end": "url(#axis-arrow)"
-      })
-    );
-
-    for (let coordinate = -9; coordinate <= 9; coordinate++) {
-      if (coordinate === 0) {
-        continue;
+      function toCanvasX(x) {
+        return left + (x - CONFIG.minX) * xUnit;
       }
 
-      const xLabel = createSvgElement("text", {
-        x: toSvgX(coordinate),
-        y: originY + 21,
-        class: "number-label",
-        "text-anchor": "middle",
-        "dominant-baseline": "middle"
-      });
+      function toCanvasY(y) {
+        return top + (CONFIG.maxY - y) * yUnit;
+      }
 
-      xLabel.textContent = formatNumber(coordinate);
-      labelsGroup.appendChild(xLabel);
+      function toMathX(canvasX) {
+        return CONFIG.minX + (canvasX - left) / xUnit;
+      }
 
-      const yLabel = createSvgElement("text", {
-        x: originX - 11,
-        y: toSvgY(coordinate),
-        class: "number-label",
-        "text-anchor": "end",
-        "dominant-baseline": "middle"
-      });
+      function toMathY(canvasY) {
+        return CONFIG.maxY - (canvasY - top) / yUnit;
+      }
 
-      yLabel.textContent = formatNumber(coordinate);
-      labelsGroup.appendChild(yLabel);
+      return {
+        left,
+        right,
+        top,
+        bottom,
+        graphWidth,
+        graphHeight,
+        xUnit,
+        yUnit,
+        toCanvasX,
+        toCanvasY,
+        toMathX,
+        toMathY
+      };
     }
 
-    const originLabel = createSvgElement("text", {
-      x: originX - 10,
-      y: originY + 20,
-      class: "origin-label",
-      "text-anchor": "end"
+    function drawBackground(width, height) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = CONFIG.backgroundColor;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    function drawGrid(system) {
+      const { left, right, top, bottom, toCanvasX, toCanvasY } = system;
+
+      ctx.save();
+      ctx.strokeStyle = CONFIG.gridColor;
+      ctx.lineWidth = CONFIG.gridLineWidth;
+
+      for (let x = CONFIG.minX; x <= CONFIG.maxX; x++) {
+        if (x === 0) continue;
+        const cx = toCanvasX(x);
+        ctx.beginPath();
+        ctx.moveTo(cx, top);
+        ctx.lineTo(cx, bottom);
+        ctx.stroke();
+      }
+
+      for (let y = CONFIG.minY; y <= CONFIG.maxY; y++) {
+        if (y === 0) continue;
+        const cy = toCanvasY(y);
+        ctx.beginPath();
+        ctx.moveTo(left, cy);
+        ctx.lineTo(right, cy);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawArrowHead(tipX, tipY, direction) {
+      const arrowLength = 13;
+      const arrowHalfWidth = 6;
+
+      ctx.save();
+      ctx.fillStyle = CONFIG.axisColor;
+      ctx.beginPath();
+
+      if (direction === "right") {
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(tipX - arrowLength, tipY - arrowHalfWidth);
+        ctx.lineTo(tipX - arrowLength, tipY + arrowHalfWidth);
+      }
+
+      if (direction === "up") {
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(tipX - arrowHalfWidth, tipY + arrowLength);
+        ctx.lineTo(tipX + arrowHalfWidth, tipY + arrowLength);
+      }
+
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawAxes(system) {
+      const { left, right, top, bottom, toCanvasX, toCanvasY } = system;
+      const originX = toCanvasX(0);
+      const originY = toCanvasY(0);
+
+      ctx.save();
+      ctx.strokeStyle = CONFIG.axisColor;
+      ctx.lineWidth = CONFIG.axisLineWidth;
+      ctx.lineCap = "round";
+
+      ctx.beginPath();
+      ctx.moveTo(left, originY);
+      ctx.lineTo(right, originY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(originX, bottom);
+      ctx.lineTo(originX, top);
+      ctx.stroke();
+
+      ctx.restore();
+
+      drawArrowHead(right, originY, "right");
+      drawArrowHead(originX, top, "up");
+    }
+
+    function drawXAxisNumbers(system) {
+      const { toCanvasX, toCanvasY } = system;
+      const originY = toCanvasY(0);
+
+      ctx.save();
+      ctx.fillStyle = CONFIG.textColor;
+      ctx.font = CONFIG.numberFont;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+
+      for (let x = -9; x <= 9; x++) {
+        if (x === 0) continue;
+        ctx.fillText(String(x), toCanvasX(x), originY + 8);
+      }
+
+      ctx.restore();
+    }
+
+    function drawYAxisNumbers(system) {
+      const { toCanvasX, toCanvasY } = system;
+      const originX = toCanvasX(0);
+
+      ctx.save();
+      ctx.fillStyle = CONFIG.textColor;
+      ctx.font = CONFIG.numberFont;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+
+      for (let y = -9; y <= 9; y++) {
+        if (y === 0) continue;
+        ctx.fillText(String(y), originX - 8, toCanvasY(y));
+      }
+
+      ctx.restore();
+    }
+
+    function drawOriginLabel(system) {
+      const { toCanvasX, toCanvasY } = system;
+      const originX = toCanvasX(0);
+      const originY = toCanvasY(0);
+
+      ctx.save();
+      ctx.fillStyle = CONFIG.textColor;
+      ctx.font = CONFIG.originFont;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "top";
+      ctx.fillText("O", originX - 7, originY + 7);
+      ctx.restore();
+    }
+
+    function drawAxisNames(system) {
+      const { right, top, toCanvasX, toCanvasY } = system;
+      const originX = toCanvasX(0);
+      const originY = toCanvasY(0);
+
+      ctx.save();
+      ctx.fillStyle = CONFIG.textColor;
+      ctx.font = CONFIG.axisNameFont;
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText("x", right, originY + 12);
+
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText("y", originX - 10, top + 7);
+
+      ctx.restore();
+    }
+
+    function drawMarker(point, color, withOutline = false) {
+      if (!point || !state.system) return;
+
+      const { toCanvasX, toCanvasY } = state.system;
+      const cx = toCanvasX(point.x);
+      const cy = toCanvasY(point.y);
+
+      ctx.save();
+
+      if (withOutline) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(37, 99, 235, 0.12)";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawCurrentMarkers() {
+      if (state.selectedPoint) {
+        drawMarker(state.selectedPoint, state.selectedPoint.color, false);
+      }
+
+      if (state.correctPoint) {
+        drawMarker(state.correctPoint, CONFIG.correctColor, true);
+      }
+    }
+
+    function drawCoordinatePlane() {
+      const { width, height } = resizeCanvas();
+      state.system = createCoordinateSystem(width, height);
+
+      drawBackground(width, height);
+      drawGrid(state.system);
+      drawAxes(state.system);
+      drawXAxisNumbers(state.system);
+      drawYAxisNumbers(state.system);
+      drawOriginLabel(state.system);
+      drawAxisNames(state.system);
+      drawCurrentMarkers();
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateProblems() {
+      const used = new Set();
+      const problems = [];
+
+      while (problems.length < CONFIG.totalQuestions) {
+        const x = randomInt(CONFIG.playableMin, CONFIG.playableMax);
+        const y = randomInt(CONFIG.playableMin, CONFIG.playableMax);
+        const key = `${x},${y}`;
+
+        if (used.has(key)) continue;
+
+        used.add(key);
+        problems.push({ x, y });
+      }
+
+      return problems;
+    }
+
+    function clearTimer() {
+      if (state.timerId) {
+        clearInterval(state.timerId);
+        state.timerId = null;
+      }
+    }
+
+    function clearTransitionTimeout() {
+      if (state.transitionTimeoutId) {
+        clearTimeout(state.transitionTimeoutId);
+        state.transitionTimeoutId = null;
+      }
+    }
+
+    function updateStatus() {
+      const solvedCount = state.currentIndex;
+      const remainingCount = CONFIG.totalQuestions - state.currentIndex;
+
+      timeLeftEl.textContent = `${(state.timerTenths / 10).toFixed(1)}초`;
+      solvedCountEl.textContent = String(solvedCount);
+      scoreEl.textContent = `${state.score}점`;
+      remainingCountEl.textContent = String(remainingCount);
+    }
+
+    function setFeedback(message = "", type = "") {
+      feedbackEl.textContent = message;
+      feedbackEl.className = "feedback";
+      if (type) {
+        feedbackEl.classList.add(type);
+      }
+    }
+
+    function showQuestion() {
+      const problem = state.problems[state.currentIndex];
+      questionNumberEl.textContent = `문제 ${state.currentIndex + 1} / 10`;
+      questionTextEl.textContent = `점 (${problem.x}, ${problem.y})를 좌표평면에 찍으세요.`;
+    }
+
+    function startTimer() {
+      clearTimer();
+
+      state.timerId = setInterval(() => {
+        state.timerTenths -= 1;
+
+        if (state.timerTenths <= 0) {
+          state.timerTenths = 0;
+          updateStatus();
+          handleTimeout();
+          return;
+        }
+
+        updateStatus();
+      }, 100);
+    }
+
+    function startQuestion() {
+      if (state.currentIndex >= CONFIG.totalQuestions) {
+        endGame();
+        return;
+      }
+
+      state.timerTenths = CONFIG.questionTimeTenths;
+      state.acceptingInput = true;
+      state.selectedPoint = null;
+      state.correctPoint = null;
+
+      showQuestion();
+      updateStatus();
+      setFeedback("");
+      resultBoxEl.textContent = "";
+      drawCoordinatePlane();
+      startTimer();
+    }
+
+    function scheduleNextQuestion(delayMs) {
+      clearTransitionTimeout();
+      state.transitionTimeoutId = setTimeout(() => {
+        state.currentIndex += 1;
+        startQuestion();
+      }, delayMs);
+    }
+
+    function handleCorrect(point) {
+      clearTimer();
+      state.acceptingInput = false;
+
+      const gainedScore = state.timerTenths;
+      state.score += gainedScore;
+      state.correctCount += 1;
+
+      state.selectedPoint = {
+        x: point.x,
+        y: point.y,
+        color: CONFIG.correctColor
+      };
+      state.correctPoint = null;
+
+      drawCoordinatePlane();
+      updateStatus();
+      setFeedback(`정답! ${gainedScore}점을 얻었습니다.`, "correct");
+      scheduleNextQuestion(900);
+    }
+
+    function handleWrong(point) {
+      clearTimer();
+      state.acceptingInput = false;
+
+      const answer = state.problems[state.currentIndex];
+
+      state.selectedPoint = {
+        x: point.x,
+        y: point.y,
+        color: CONFIG.wrongColor
+      };
+      state.correctPoint = {
+        x: answer.x,
+        y: answer.y
+      };
+
+      drawCoordinatePlane();
+      updateStatus();
+      setFeedback(`오답! 정답은 (${answer.x}, ${answer.y})입니다.`, "wrong");
+      scheduleNextQuestion(2000);
+    }
+
+    function handleTimeout() {
+      clearTimer();
+      state.acceptingInput = false;
+
+      const answer = state.problems[state.currentIndex];
+      state.selectedPoint = null;
+      state.correctPoint = {
+        x: answer.x,
+        y: answer.y
+      };
+
+      drawCoordinatePlane();
+      setFeedback(`시간 종료! 정답은 (${answer.x}, ${answer.y})입니다.`, "timeout");
+      scheduleNextQuestion(2000);
+    }
+
+    function getLeaderboard() {
+      try {
+        const raw = localStorage.getItem(LEADERBOARD_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveLeaderboard(list) {
+      localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(list));
+    }
+
+    function formatPlayedTime(isoString) {
+      const date = new Date(isoString);
+
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      const hh = String(date.getHours()).padStart(2, "0");
+      const min = String(date.getMinutes()).padStart(2, "0");
+
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    }
+
+    function renderLeaderboard() {
+      const leaderboard = getLeaderboard();
+      leaderboardBody.innerHTML = "";
+
+      if (leaderboard.length === 0) {
+        leaderboardEmpty.style.display = "block";
+        leaderboardTableWrap.style.display = "none";
+        return;
+      }
+
+      leaderboardEmpty.style.display = "none";
+      leaderboardTableWrap.style.display = "block";
+
+      leaderboard.forEach((item, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${item.score}점</td>
+          <td>${item.correctCount} / 10</td>
+          <td>${formatPlayedTime(item.playedAt)}</td>
+        `;
+        leaderboardBody.appendChild(tr);
+      });
+    }
+
+    function addScoreToLeaderboard(score, correctCount) {
+      const leaderboard = getLeaderboard();
+
+      leaderboard.push({
+        score,
+        correctCount,
+        playedAt: new Date().toISOString()
+      });
+
+      leaderboard.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
+        return new Date(a.playedAt) - new Date(b.playedAt);
+      });
+
+      const trimmed = leaderboard.slice(0, 10);
+      saveLeaderboard(trimmed);
+      renderLeaderboard();
+    }
+
+    function endGame() {
+      clearTimer();
+      clearTransitionTimeout();
+      state.acceptingInput = false;
+      state.gameEnded = true;
+
+      questionNumberEl.textContent = "게임 종료";
+      questionTextEl.textContent = "10문제를 모두 풀었습니다.";
+      timeLeftEl.textContent = "0.0초";
+      solvedCountEl.textContent = String(CONFIG.totalQuestions);
+      remainingCountEl.textContent = "0";
+      scoreEl.textContent = `${state.score}점`;
+
+      setFeedback("", "");
+      resultBoxEl.textContent = `최종 점수: ${state.score}점 · 정답 ${state.correctCount}문제`;
+      restartButton.disabled = false;
+
+      addScoreToLeaderboard(state.score, state.correctCount);
+    }
+
+    function startGame() {
+      clearTimer();
+      clearTransitionTimeout();
+
+      state.problems = generateProblems();
+      state.currentIndex = 0;
+      state.score = 0;
+      state.timerTenths = CONFIG.questionTimeTenths;
+      state.acceptingInput = false;
+      state.selectedPoint = null;
+      state.correctPoint = null;
+      state.gameEnded = false;
+      state.correctCount = 0;
+
+      restartButton.disabled = true;
+      resultBoxEl.textContent = "";
+
+      startQuestion();
+    }
+
+    function getSnappedPointFromEvent(event) {
+      if (!state.system) return null;
+
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+
+      const { left, right, top, bottom, toMathX, toMathY } = state.system;
+
+      if (clickX < left || clickX > right || clickY < top || clickY > bottom) {
+        return null;
+      }
+
+      const x = Math.round(toMathX(clickX));
+      const y = Math.round(toMathY(clickY));
+
+      return {
+        x: Math.max(CONFIG.minX, Math.min(CONFIG.maxX, x)),
+        y: Math.max(CONFIG.minY, Math.min(CONFIG.maxY, y))
+      };
+    }
+
+    canvas.addEventListener("click", (event) => {
+      if (!state.acceptingInput || state.gameEnded) return;
+
+      const point = getSnappedPointFromEvent(event);
+      if (!point) return;
+
+      const answer = state.problems[state.currentIndex];
+
+      if (point.x === answer.x && point.y === answer.y) {
+        handleCorrect(point);
+      } else {
+        handleWrong(point);
+      }
     });
 
-    originLabel.textContent = "O";
-    labelsGroup.appendChild(originLabel);
-
-    const xAxisName = createSvgElement("text", {
-      x: plotRight + 16,
-      y: originY + 25,
-      class: "axis-name",
-      "text-anchor": "middle"
+    restartButton.addEventListener("click", () => {
+      startGame();
     });
 
-    xAxisName.textContent = "x";
-    labelsGroup.appendChild(xAxisName);
-
-    const yAxisName = createSvgElement("text", {
-      x: originX - 18,
-      y: plotTop - 17,
-      class: "axis-name",
-      "text-anchor": "middle"
+    clearLeaderboardButton.addEventListener("click", () => {
+      localStorage.removeItem(LEADERBOARD_KEY);
+      renderLeaderboard();
     });
 
-    yAxisName.textContent = "y";
-    labelsGroup.appendChild(yAxisName);
+    window.addEventListener("resize", () => {
+      drawCoordinatePlane();
+    });
+
+    drawCoordinatePlane();
+    renderLeaderboard();
+    startGame();
   </script>
 </body>
 </html>
