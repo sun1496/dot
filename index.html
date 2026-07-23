@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>좌표평면</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #ffffff;
+    }
+
+    .coordinate-plane-container {
+      width: min(92vw, 760px);
+      aspect-ratio: 1 / 1;
+      background-color: #ffffff;
+    }
+
+    #coordinate-plane {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff;
+    }
+
+    .grid-line {
+      stroke: #d9d9d9;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .axis-line {
+      stroke: #000000;
+      stroke-width: 2.5;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .number-label {
+      fill: #000000;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    .origin-label {
+      fill: #000000;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 18px;
+      font-style: normal;
+      user-select: none;
+    }
+
+    .axis-name {
+      fill: #000000;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 21px;
+      font-style: italic;
+      user-select: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="coordinate-plane-container">
+    <svg
+      id="coordinate-plane"
+      viewBox="0 0 760 760"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="x와 y의 범위가 마이너스 10부터 10까지인 좌표평면"
+    >
+      <defs>
+        <marker
+          id="axis-arrow"
+          markerWidth="8"
+          markerHeight="8"
+          refX="7"
+          refY="4"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path d="M 0 0 L 8 4 L 0 8 Z" fill="#000000" />
+        </marker>
+
+        <clipPath id="plot-clip">
+          <rect x="60" y="60" width="640" height="640" />
+        </clipPath>
+      </defs>
+
+      <rect x="0" y="0" width="760" height="760" fill="#ffffff" />
+
+      <g id="grid"></g>
+      <g id="graph-layer" clip-path="url(#plot-clip)"></g>
+      <g id="axes"></g>
+      <g id="labels"></g>
+    </svg>
+  </div>
+
+  <script>
+    const gridGroup = document.getElementById("grid");
+    const axesGroup = document.getElementById("axes");
+    const labelsGroup = document.getElementById("labels");
+
+    const SVG_NS = "http://www.w3.org/2000/svg";
+
+    const minCoordinate = -10;
+    const maxCoordinate = 10;
+
+    const plotLeft = 60;
+    const plotTop = 60;
+    const plotSize = 640;
+
+    const unit = plotSize / (maxCoordinate - minCoordinate);
+
+    const plotRight = plotLeft + plotSize;
+    const plotBottom = plotTop + plotSize;
+
+    function toSvgX(x) {
+      return plotLeft + (x - minCoordinate) * unit;
+    }
+
+    function toSvgY(y) {
+      return plotBottom - (y - minCoordinate) * unit;
+    }
+
+    function createSvgElement(tagName, attributes = {}) {
+      const element = document.createElementNS(SVG_NS, tagName);
+
+      Object.entries(attributes).forEach(([name, value]) => {
+        element.setAttribute(name, value);
+      });
+
+      return element;
+    }
+
+    function formatNumber(number) {
+      return number < 0 ? `−${Math.abs(number)}` : String(number);
+    }
+
+    for (let coordinate = minCoordinate; coordinate <= maxCoordinate; coordinate++) {
+      const x = toSvgX(coordinate);
+      const y = toSvgY(coordinate);
+
+      gridGroup.appendChild(
+        createSvgElement("line", {
+          x1: x,
+          y1: plotTop,
+          x2: x,
+          y2: plotBottom,
+          class: "grid-line"
+        })
+      );
+
+      gridGroup.appendChild(
+        createSvgElement("line", {
+          x1: plotLeft,
+          y1: y,
+          x2: plotRight,
+          y2: y,
+          class: "grid-line"
+        })
+      );
+    }
+
+    const originX = toSvgX(0);
+    const originY = toSvgY(0);
+
+    axesGroup.appendChild(
+      createSvgElement("line", {
+        x1: plotLeft,
+        y1: originY,
+        x2: plotRight + 8,
+        y2: originY,
+        class: "axis-line",
+        "marker-end": "url(#axis-arrow)"
+      })
+    );
+
+    axesGroup.appendChild(
+      createSvgElement("line", {
+        x1: originX,
+        y1: plotBottom,
+        x2: originX,
+        y2: plotTop - 8,
+        class: "axis-line",
+        "marker-end": "url(#axis-arrow)"
+      })
+    );
+
+    for (let coordinate = -9; coordinate <= 9; coordinate++) {
+      if (coordinate === 0) {
+        continue;
+      }
+
+      const xLabel = createSvgElement("text", {
+        x: toSvgX(coordinate),
+        y: originY + 21,
+        class: "number-label",
+        "text-anchor": "middle",
+        "dominant-baseline": "middle"
+      });
+
+      xLabel.textContent = formatNumber(coordinate);
+      labelsGroup.appendChild(xLabel);
+
+      const yLabel = createSvgElement("text", {
+        x: originX - 11,
+        y: toSvgY(coordinate),
+        class: "number-label",
+        "text-anchor": "end",
+        "dominant-baseline": "middle"
+      });
+
+      yLabel.textContent = formatNumber(coordinate);
+      labelsGroup.appendChild(yLabel);
+    }
+
+    const originLabel = createSvgElement("text", {
+      x: originX - 10,
+      y: originY + 20,
+      class: "origin-label",
+      "text-anchor": "end"
+    });
+
+    originLabel.textContent = "O";
+    labelsGroup.appendChild(originLabel);
+
+    const xAxisName = createSvgElement("text", {
+      x: plotRight + 16,
+      y: originY + 25,
+      class: "axis-name",
+      "text-anchor": "middle"
+    });
+
+    xAxisName.textContent = "x";
+    labelsGroup.appendChild(xAxisName);
+
+    const yAxisName = createSvgElement("text", {
+      x: originX - 18,
+      y: plotTop - 17,
+      class: "axis-name",
+      "text-anchor": "middle"
+    });
+
+    yAxisName.textContent = "y";
+    labelsGroup.appendChild(yAxisName);
+  </script>
+</body>
+</html>
