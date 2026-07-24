@@ -1,1007 +1,931 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>두 점이 만나 생기는 하나</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>성심 삼각형 연구소</title>
+<style>
+  :root{
+    --bg:#f4f8ff;
+    --panel:#ffffff;
+    --ink:#24334a;
+    --muted:#6d7a90;
+    --line:#d8e2f1;
+    --accent:#4f7cff;
+    --accent2:#7b61ff;
+    --good:#26a269;
+    --warn:#e59b25;
+    --bad:#d85757;
+    --shadow:0 10px 28px rgba(38,62,105,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--ink)}
+  button,input,textarea{font:inherit}
+  button{touch-action:manipulation}
+  #app{
+    width:100vw;height:100vh;
+    display:grid;
+    grid-template-rows:58px 178px minmax(0,1fr) 150px;
+    gap:8px;padding:8px;
+  }
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(135deg,#365fda,#7456e8);
+    color:#fff;border-radius:18px;padding:0 18px;box-shadow:var(--shadow)
+  }
+  header h1{font-size:22px;margin:0;letter-spacing:-.4px}
+  header p{font-size:13px;margin:0;opacity:.9}
+  .top-actions{display:flex;gap:8px}
+  .ghost{
+    border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.13);
+    color:white;border-radius:10px;padding:7px 11px;font-weight:700;cursor:pointer
+  }
+  .experiments{
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;min-height:0
+  }
+  .card{
+    background:var(--panel);border:2px solid transparent;border-radius:16px;padding:10px;
+    box-shadow:0 4px 14px rgba(38,62,105,.08);display:flex;flex-direction:column;min-width:0
+  }
+  .card.active{border-color:var(--accent);box-shadow:0 7px 20px rgba(79,124,255,.2)}
+  .card-head{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .badge{
+    width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+    color:white;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));flex:none
+  }
+  .card h2{font-size:14px;margin:0;line-height:1.25}
+  .inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px}
+  .field{min-width:0}
+  .field label{display:block;font-size:10px;color:var(--muted);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .field input{
+    width:100%;height:30px;border:1px solid var(--line);border-radius:8px;padding:0 7px;
+    color:var(--ink);background:#fbfdff;outline:none
+  }
+  .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,124,255,.12)}
+  .run{
+    margin-top:auto;width:100%;height:32px;border:0;border-radius:9px;
+    background:var(--accent);color:#fff;font-weight:800;cursor:pointer
+  }
+  .stage{
+    min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 215px;gap:8px
+  }
+  .canvas-wrap{
+    min-width:0;min-height:0;background:#fff;border-radius:18px;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;border:1px solid #e4ebf6
+  }
+  #canvas{display:block;width:100%;height:100%;touch-action:none}
+  .canvas-title{
+    position:absolute;left:14px;top:12px;background:rgba(255,255,255,.9);
+    border:1px solid #e1e8f3;border-radius:10px;padding:7px 10px;font-size:13px;font-weight:800;
+    pointer-events:none;backdrop-filter:blur(6px)
+  }
+  .hint{
+    position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
+    background:rgba(36,51,74,.88);color:white;border-radius:999px;padding:7px 13px;
+    font-size:12px;pointer-events:none;opacity:0;transition:.25s;white-space:nowrap
+  }
+  .hint.show{opacity:1}
+  .side{
+    background:#fff;border-radius:18px;box-shadow:var(--shadow);padding:12px;
+    display:flex;flex-direction:column;gap:9px;min-height:0
+  }
+  .side h3{margin:0;font-size:15px}
+  .status-box{
+    border-radius:12px;background:#eef4ff;padding:10px;min-height:72px;
+    font-size:13px;line-height:1.5
+  }
+  .legend{display:grid;gap:6px;font-size:12px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .side button{
+    border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px;font-weight:700;
+    color:var(--ink);cursor:pointer
+  }
+  .rotate-panel{
+    display:none;border:1px solid #ffd2bc;background:#fff8f4;border-radius:12px;padding:6px;gap:4px
+  }
+  .rotate-panel.show{display:grid}
+  .rotate-title{display:flex;justify-content:space-between;align-items:center;gap:5px;font-size:10px;color:#9b4a28}
+  .rotate-title b{font-size:11px;color:#6f351e;white-space:nowrap}
+  .rotate-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rotate-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .rotate-row button{font-size:10px;padding:5px 1px;border-color:#ffc3a6;background:#fff;color:#a54720}
+  .rotate-row button:active{background:#ffe5d8;transform:translateY(1px)}
+  .records{
+    min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) 1.25fr;gap:8px
+  }
+  .record,.final-note{
+    background:#fff;border-radius:15px;box-shadow:0 4px 14px rgba(38,62,105,.08);
+    padding:9px;display:flex;flex-direction:column;min-width:0;min-height:0
+  }
+  .record label,.final-note label{font-size:12px;font-weight:900;margin-bottom:5px}
+  textarea{
+    width:100%;flex:1;min-height:0;resize:none;border:1px solid var(--line);border-radius:9px;
+    padding:8px;color:var(--ink);outline:none;background:#fbfdff;line-height:1.35;font-size:12px
+  }
+  textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,124,255,.12)}
+  .final-note{background:linear-gradient(145deg,#fff8dc,#fff)}
+  .final-note label{color:#7d5c00}
+  .tiny{font-size:10px;color:var(--muted);margin-top:4px}
+  @media (max-width:1000px){
+    #app{grid-template-rows:52px 166px minmax(0,1fr) 138px}
+    header h1{font-size:18px}
+    header p{display:none}
+    .card{padding:8px}
+    .card h2{font-size:12px}
+    .stage{grid-template-columns:minmax(0,1fr) 180px}
+  }
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
-      color: #111827;
-    }
-
-    .page {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 24px 16px 40px;
-    }
-
-    .title-box {
-      text-align: center;
-      margin-bottom: 18px;
-    }
-
-    .title-box h1 {
-      margin: 0 0 8px;
-      font-size: 34px;
-      font-weight: 700;
-    }
-
-    .title-box p {
-      margin: 0;
-      color: #4b5563;
-      font-size: 15px;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
-      gap: 18px;
-      align-items: start;
-    }
-
-    .panel,
-    .leaderboard-panel {
-      background: #ffffff;
-      border-radius: 18px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-      padding: 20px;
-    }
-
-    .question-box {
-      text-align: center;
-      margin-bottom: 14px;
-    }
-
-    .question-number {
-      font-size: 14px;
-      color: #6b7280;
-      margin-bottom: 6px;
-    }
-
-    .question-text {
-      font-size: 24px;
-      font-weight: 700;
-      line-height: 1.4;
-      min-height: 34px;
-    }
-
-    .status-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .status-card {
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 14px 10px;
-      text-align: center;
-    }
-
-    .status-card.time-card {
-      background: #dbeafe;
-    }
-
-    .status-card.solved-card {
-      background: #dcfce7;
-    }
-
-    .status-card.score-card {
-      background: #fef3c7;
-    }
-
-    .status-card.remaining-card {
-      background: #f3e8ff;
-    }
-
-    .status-label {
-      font-size: 13px;
-      color: #4b5563;
-      margin-bottom: 6px;
-    }
-
-    .status-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    .canvas-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .plane-box {
-      width: min(100%, 760px);
-      aspect-ratio: 1 / 1;
-      background: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      background: #ffffff;
-      cursor: crosshair;
-      touch-action: manipulation;
-    }
-
-    .feedback {
-      margin-top: 16px;
-      min-height: 28px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-    .feedback.correct {
-      color: #2563eb;
-    }
-
-    .feedback.wrong {
-      color: #dc2626;
-    }
-
-    .feedback.timeout {
-      color: #b45309;
-    }
-
-    .controls {
-      margin-top: 18px;
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    button {
-      border: none;
-      border-radius: 12px;
-      padding: 12px 18px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      background: #111827;
-      color: #ffffff;
-    }
-
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    .result-box {
-      margin-top: 16px;
-      text-align: center;
-      font-size: 22px;
-      font-weight: 700;
-      color: #111827;
-      min-height: 30px;
-    }
-
-    .leaderboard-panel h2 {
-      margin: 0 0 8px;
-      font-size: 24px;
-    }
-
-    .leaderboard-desc {
-      margin: 0 0 16px;
-      color: #6b7280;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .leaderboard-table-wrap {
-      overflow-x: auto;
-    }
-
-    .leaderboard-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    .leaderboard-table th,
-    .leaderboard-table td {
-      padding: 10px 8px;
-      border-bottom: 1px solid #e5e7eb;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    .leaderboard-table th {
-      background: #f9fafb;
-      font-weight: 700;
-    }
-
-    .leaderboard-empty {
-      padding: 18px 10px;
-      text-align: center;
-      color: #6b7280;
-      background: #f9fafb;
-      border: 1px dashed #d1d5db;
-      border-radius: 12px;
-    }
-
-    .small-button {
-      width: 100%;
-      margin-top: 14px;
-      background: #374151;
-    }
-
-    @media (max-width: 900px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .title-box h1 {
-        font-size: 28px;
-      }
-
-      .question-text {
-        font-size: 20px;
-      }
-
-      .status-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .status-value {
-        font-size: 22px;
-      }
-    }
-  </style>
+  @media (max-height:820px){
+    #app{grid-template-rows:52px 164px minmax(0,1fr) 136px;gap:6px;padding:6px}
+    .side{padding:8px;gap:5px}
+    .side h3{font-size:14px}
+    .status-box{min-height:54px;padding:7px;font-size:12px;line-height:1.35}
+    .legend{gap:3px;font-size:10px}
+    .side button{padding:5px;font-size:11px}
+    .tiny{font-size:9px;line-height:1.2;margin-top:1px}
+    .hint{bottom:6px;padding:5px 10px;font-size:10px}
+  }
+</style>
 </head>
 <body>
-  <div class="page">
-    <div class="title-box">
-      <h1>두 점이 만나 생기는 하나</h1>
-      <p>문제로 제시된 순서쌍에 해당하는 점을 좌표평면 위에 정확히 찍어 보세요.</p>
+<div id="app">
+  <header>
+    <div>
+      <h1>△ 성심 삼각형 연구소</h1>
+      <p>수치를 바꾸고, 움직임을 관찰하고, 나만의 규칙을 기록해 보세요.</p>
     </div>
+    <div class="top-actions">
+      <button class="ghost" id="pauseBtn">애니메이션 멈춤</button>
+      <button class="ghost" id="resetBtn">전체 초기화</button>
+    </div>
+  </header>
 
-    <div class="layout">
-      <div class="panel">
-        <div class="question-box">
-          <div id="questionNumber" class="question-number">문제 1 / 10</div>
-          <div id="questionText" class="question-text">점 (0, 0)을 좌표평면에 찍으세요.</div>
-        </div>
+  <section class="experiments" id="experimentCards">
+    <article class="card active" data-exp="1">
+      <div class="card-head"><div class="badge">1</div><h2>세 각의 크기</h2></div>
+      <div class="inputs">
+        <div class="field"><label>각 1 (°)</label><input id="e1a" type="number" min="1" max="178" value="40"></div>
+        <div class="field"><label>각 2 (°)</label><input id="e1b" type="number" min="1" max="178" value="60"></div>
+        <div class="field"><label>각 3 (°)</label><input id="e1c" type="number" min="1" max="178" value="80"></div>
+      </div>
+      <button class="run" data-run="1">생성하기</button>
+    </article>
 
-        <div class="status-grid">
-          <div class="status-card time-card">
-            <div class="status-label">남은 시간</div>
-            <div id="timeLeft" class="status-value">10.0초</div>
-          </div>
-          <div class="status-card solved-card">
-            <div class="status-label">현재까지 푼 문제 수</div>
-            <div id="solvedCount" class="status-value">0</div>
-          </div>
-          <div class="status-card score-card">
-            <div class="status-label">누적 점수</div>
-            <div id="score" class="status-value">0점</div>
-          </div>
-          <div class="status-card remaining-card">
-            <div class="status-label">남은 문제 수</div>
-            <div id="remainingCount" class="status-value">10</div>
-          </div>
-        </div>
+    <article class="card" data-exp="2">
+      <div class="card-head"><div class="badge">2</div><h2>두 변과 그 사이 각</h2></div>
+      <div class="inputs">
+        <div class="field"><label>변 1</label><input id="e2s1" type="number" min="1" value="6"></div>
+        <div class="field"><label>변 2</label><input id="e2s2" type="number" min="1" value="5"></div>
+        <div class="field"><label>사이 각 (°)</label><input id="e2ang" type="number" min="1" max="179" value="55"></div>
+      </div>
+      <button class="run" data-run="2">생성하기</button>
+    </article>
 
-        <div class="canvas-wrap">
-          <div class="plane-box">
-            <canvas id="coordinatePlane" width="760" height="760" aria-label="점찍기 형성평가 좌표평면"></canvas>
-          </div>
-        </div>
+    <article class="card" data-exp="3">
+      <div class="card-head"><div class="badge">3</div><h2>두 변과 다른 위치 각</h2></div>
+      <div class="inputs">
+        <div class="field"><label>밑변</label><input id="e3base" type="number" min="1" value="7"></div>
+        <div class="field"><label>다른 변</label><input id="e3side" type="number" min="1" value="5"></div>
+        <div class="field"><label>각 (°)</label><input id="e3ang" type="number" min="1" max="179" value="35"></div>
+      </div>
+      <button class="run" data-run="3">생성하기</button>
+    </article>
 
-        <div id="feedback" class="feedback"></div>
-        <div id="resultBox" class="result-box"></div>
+    <article class="card" data-exp="4">
+      <div class="card-head"><div class="badge">4</div><h2>세 변의 길이</h2></div>
+      <div class="inputs">
+        <div class="field"><label>변 1</label><input id="e4s1" type="number" min="1" value="6"></div>
+        <div class="field"><label>변 2</label><input id="e4s2" type="number" min="1" value="5"></div>
+        <div class="field"><label>변 3</label><input id="e4s3" type="number" min="1" value="7"></div>
+      </div>
+      <button class="run" data-run="4">생성하기</button>
+    </article>
 
-        <div class="controls">
-          <button id="restartButton" disabled>다시 게임하기</button>
+    <article class="card" data-exp="5">
+      <div class="card-head"><div class="badge">5</div><h2>한 변과 양 끝 각</h2></div>
+      <div class="inputs">
+        <div class="field"><label>밑변</label><input id="e5base" type="number" min="1" value="7"></div>
+        <div class="field"><label>왼쪽 각 (°)</label><input id="e5a" type="number" min="1" max="178" value="50"></div>
+        <div class="field"><label>오른쪽 각 (°)</label><input id="e5b" type="number" min="1" max="178" value="65"></div>
+      </div>
+      <button class="run" data-run="5">생성하기</button>
+    </article>
+  </section>
+
+  <section class="stage">
+    <div class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+      <div class="canvas-title" id="canvasTitle">실험 1 · 세 각의 크기</div>
+      <div class="hint" id="hint">삼각형을 탭해 선택 · 안쪽을 끌어 이동 · ↻ 손잡이 또는 회전 버튼 사용</div>
+    </div>
+    <aside class="side">
+      <h3>현재 실험 상태</h3>
+      <div class="status-box" id="status">세 각을 입력한 뒤 생성하기를 눌러 보세요.</div>
+      <div class="legend">
+        <span><i class="dot" style="background:#4f7cff"></i>기준 도형</span>
+        <span><i class="dot" style="background:#ff8b55"></i>움직이거나 끌 수 있는 도형</span>
+        <span><i class="dot" style="background:#26a269"></i>서로 정확히 겹친 상태</span>
+      </div>
+      <button id="replayBtn">현재 실험 다시 보기</button>
+      <button id="scatterBtn">도형 다시 흩어 놓기</button>
+      <div class="rotate-panel" id="rotatePanel">
+        <div class="rotate-title"><b>선택한 삼각형 회전</b><span id="selectedInfo">주황색 삼각형을 선택하세요</span></div>
+        <div class="rotate-row">
+          <button id="rotateLeft15" aria-label="왼쪽으로 15도 회전">↶15°</button>
+          <button id="rotateLeft5" aria-label="왼쪽으로 5도 회전">↶5°</button>
+          <button id="rotateRight5" aria-label="오른쪽으로 5도 회전">5°↷</button>
+          <button id="rotateRight15" aria-label="오른쪽으로 15도 회전">15°↷</button>
         </div>
       </div>
+      <div class="tiny">삼각형 안쪽은 위치 이동, 바깥의 ↻ 손잡이는 자유 회전입니다. 회전 버튼은 아이패드에서도 정확히 작동합니다.</div>
+    </aside>
+  </section>
 
-      <aside class="leaderboard-panel">
-        <h2>리더보드</h2>
-        <p class="leaderboard-desc">
-          10문제를 모두 풀면 최종 점수가 자동으로 기록됩니다. 상위 10개의 기록만 표시됩니다.
-        </p>
+  <section class="records">
+    <div class="record"><label>실험 1 관찰결과</label><textarea id="note1" placeholder="크기와 모양이 어떻게 변했나요?"></textarea></div>
+    <div class="record"><label>실험 2 관찰결과</label><textarea id="note2" placeholder="끌어서 겹쳐 본 결과를 적어 보세요."></textarea></div>
+    <div class="record"><label>실험 3 관찰결과</label><textarea id="note3" placeholder="움직이는 변과 가능한 모양을 관찰하세요."></textarea></div>
+    <div class="record"><label>실험 4 관찰결과</label><textarea id="note4" placeholder="세 선분이 만나는 모습을 적어 보세요."></textarea></div>
+    <div class="record"><label>실험 5 관찰결과</label><textarea id="note5" placeholder="두 선이 만나는 위치를 관찰하세요."></textarea></div>
+    <div class="final-note"><label>나의 최종 발견</label><textarea id="finalNote" placeholder="어떤 입력에서는 크기가 달라질 수 있었나요? 어떤 입력에서는 돌리거나 옮기면 정확히 겹쳤나요? 실험 번호와 근거를 함께 정리해 보세요."></textarea></div>
+  </section>
+</div>
 
-        <div id="leaderboardEmpty" class="leaderboard-empty">
-          아직 기록이 없습니다.
-        </div>
+<script>
+(() => {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const title = document.getElementById('canvasTitle');
+  const status = document.getElementById('status');
+  const hint = document.getElementById('hint');
+  const pauseBtn = document.getElementById('pauseBtn');
 
-        <div id="leaderboardTableWrap" class="leaderboard-table-wrap" style="display: none;">
-          <table class="leaderboard-table">
-            <thead>
-              <tr>
-                <th>순위</th>
-                <th>점수</th>
-                <th>정답 수</th>
-                <th>기록 시간</th>
-              </tr>
-            </thead>
-            <tbody id="leaderboardBody"></tbody>
-          </table>
-        </div>
+  let W=0,H=0,dpr=1;
+  let current=1, running=true, startTime=performance.now();
+  let params={}, triangles=[], drag=null, hoverIndex=-1, selectedTriangle=null;
 
-        <button id="clearLeaderboardButton" class="small-button">리더보드 초기화</button>
-      </aside>
-    </div>
-  </div>
+  const names = {
+    1:'세 각의 크기',
+    2:'두 변과 그 사이 각',
+    3:'두 변과 다른 위치 각',
+    4:'세 변의 길이',
+    5:'한 변과 양 끝 각'
+  };
 
-  <script>
-    const canvas = document.getElementById("coordinatePlane");
-    const ctx = canvas.getContext("2d");
+  const get = id => Number(document.getElementById(id).value);
+  const rad = d => d*Math.PI/180;
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 
-    const questionNumberEl = document.getElementById("questionNumber");
-    const questionTextEl = document.getElementById("questionText");
-    const timeLeftEl = document.getElementById("timeLeft");
-    const solvedCountEl = document.getElementById("solvedCount");
-    const scoreEl = document.getElementById("score");
-    const remainingCountEl = document.getElementById("remainingCount");
-    const feedbackEl = document.getElementById("feedback");
-    const resultBoxEl = document.getElementById("resultBox");
-    const restartButton = document.getElementById("restartButton");
+  function resize(){
+    const r=canvas.getBoundingClientRect();
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=Math.round(r.width*dpr);
+    canvas.height=Math.round(r.height*dpr);
+    W=r.width;H=r.height;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize',resize);
 
-    const leaderboardBody = document.getElementById("leaderboardBody");
-    const leaderboardEmpty = document.getElementById("leaderboardEmpty");
-    const leaderboardTableWrap = document.getElementById("leaderboardTableWrap");
-    const clearLeaderboardButton = document.getElementById("clearLeaderboardButton");
+  function setActive(n){
+    const changed=current!==n;
+    current=n;
+    if(changed){
+      params={};
+      triangles=[];
+      drag=null;
+    }
+    document.querySelectorAll('.card').forEach(c=>c.classList.toggle('active',Number(c.dataset.exp)===n));
+    title.textContent=`실험 ${n} · ${names[n]}`;
+    hint.classList.toggle('show',[2,4,5].includes(n));
+    document.getElementById('rotatePanel').classList.toggle('show',[2,4,5].includes(n));
+    if(![2,4,5].includes(n)) selectTriangle(null);
+  }
 
-    const LEADERBOARD_KEY = "point_quiz_leaderboard_v1";
+  function solveExperiment3(base,side,ang){
+    if(![base,side,ang].every(Number.isFinite) || base<=0 || side<=0 || ang<=0 || ang>=180){
+      return [];
+    }
+    const theta=rad(ang);
+    const c=Math.cos(theta);
+    const s=Math.sin(theta);
+    const disc=side*side-base*base*s*s;
+    const tol=Math.max(1,base*base,side*side)*1e-10;
+    if(disc < -tol) return [];
 
-    const CONFIG = {
-      minX: -10,
-      maxX: 10,
-      minY: -10,
-      maxY: 10,
-      playableMin: -9,
-      playableMax: 9,
-      totalQuestions: 10,
-      questionTimeTenths: 100,
+    const root=Math.sqrt(Math.max(0,disc));
+    const eps=Math.max(1,base,side)*1e-9;
+    const mergeTol=Math.max(1,base,side)*1e-6;
+    const candidates=[base*c-root,base*c+root];
+    const roots=[];
+    candidates.forEach(t=>{
+      if(t>eps && roots.every(v=>Math.abs(v-t)>mergeTol)) roots.push(t);
+    });
+    roots.sort((a,b)=>a-b);
+    return roots;
+  }
 
-      padding: 55,
+  function validate(n){
+    if(n===1){
+      const a=get('e1a'),b=get('e1b'),c=get('e1c');
+      if([a,b,c].some(v=>!isFinite(v)||v<=0)) return '각의 크기는 0보다 커야 합니다.';
+      if(Math.abs(a+b+c-180)>.01) return '세 각의 합이 180°가 되도록 입력해 주세요.';
+      params={a,b,c}; return '';
+    }
+    if(n===2){
+      const s1=get('e2s1'),s2=get('e2s2'),ang=get('e2ang');
+      if(s1<=0||s2<=0) return '변의 길이는 0보다 커야 합니다.';
+      if(ang<=0||ang>=180) return '각은 0°보다 크고 180°보다 작아야 합니다.';
+      params={s1,s2,ang}; return '';
+    }
+    if(n===3){
+      const base=get('e3base'),side=get('e3side'),ang=get('e3ang');
+      if(![base,side,ang].every(Number.isFinite)) return '세 칸에 숫자를 모두 입력해 주세요.';
+      if(base<=0||side<=0) return '변의 길이는 0보다 커야 합니다.';
+      if(ang<=0||ang>=180) return '각은 0°보다 크고 180°보다 작아야 합니다.';
+      const roots=solveExperiment3(base,side,ang);
+      if(!roots.length) return '입력한 세 조건으로는 세 점이 서로 다른 삼각형을 만들 수 없습니다. 다른 값을 넣어 보세요.';
+      params={base,side,ang,roots}; return '';
+    }
+    if(n===4){
+      const s1=get('e4s1'),s2=get('e4s2'),s3=get('e4s3');
+      if([s1,s2,s3].some(v=>v<=0)) return '변의 길이는 0보다 커야 합니다.';
+      const sorted=[s1,s2,s3].sort((a,b)=>a-b);
+      if(sorted[0]+sorted[1]<=sorted[2]) return '짧은 두 변의 합이 가장 긴 변보다 커야 합니다.';
+      params={s1,s2,s3}; return '';
+    }
+    const base=get('e5base'),a=get('e5a'),b=get('e5b');
+    if(base<=0) return '변의 길이는 0보다 커야 합니다.';
+    if(a<=0||b<=0||a+b>=180) return '두 각은 0°보다 크고, 합은 180°보다 작아야 합니다.';
+    params={base,a,b}; return '';
+  }
 
-      backgroundColor: "#ffffff",
-      gridColor: "#d9d9d9",
-      axisColor: "#000000",
-      textColor: "#000000",
+  function runExperiment(n){
+    setActive(n);
+    const err=validate(n);
+    if(err){
+      params={};
+      triangles=[];
+      status.innerHTML=`<b style="color:#d85757">입력 확인</b><br>${err}`;
+      return;
+    }
+    startTime=performance.now(); drag=null;
+    buildTriangles();
+    const messages={
+      1:'각의 표시를 살펴보며, 삼각형의 크기가 어떻게 변하는지 관찰하세요.',
+      2:'주황색 삼각형을 선택하세요. 안쪽을 끌어 이동하고, ↻ 손잡이 또는 회전 버튼으로 돌려 겹쳐 보세요.',
+      3:'초록색으로 표시되는 만남의 위치와 주황색 변의 흔들림을 관찰하세요.',
+      4:'주황색 삼각형을 이동하고 회전하여 기준 도형과 겹쳐 보세요. 모든 변의 표시도 비교하세요.',
+      5:'주황색 삼각형을 이동하고 회전하여 겹쳐 보세요. 밑변과 양 끝 각의 표시도 비교하세요.'
+    };
+    status.textContent=messages[n];
+  }
 
-      correctColor: "#2563eb",
-      wrongColor: "#dc2626",
+  function referenceTriangle(){
+    const cx=W*.48, cy=H*.56, maxW=W*.48, maxH=H*.64;
+    if(current===1){
+      const A=rad(params.a), B=rad(params.b);
+      const base=1;
+      const x=(Math.sin(B)*Math.cos(A))/Math.sin(Math.PI-A-B);
+      const y=(Math.sin(B)*Math.sin(A))/Math.sin(Math.PI-A-B);
+      return fit([{x:0,y:0},{x:base,y:0},{x,y:-y}],cx,cy,maxW,maxH);
+    }
+    if(current===2){
+      return fit([{x:0,y:0},{x:params.s1,y:0},{x:params.s2*Math.cos(rad(params.ang)),y:-params.s2*Math.sin(rad(params.ang))}],cx,cy,maxW,maxH);
+    }
+    if(current===4){
+      const a=params.s1,b=params.s2,c=params.s3;
+      const x=(a*a+c*c-b*b)/(2*a), y=Math.sqrt(Math.max(0,c*c-x*x));
+      return fit([{x:0,y:0},{x:a,y:0},{x,y:-y}],cx,cy,maxW,maxH);
+    }
+    if(current===5){
+      const L=params.base,A=rad(params.a),B=rad(params.b);
+      const t=L*Math.sin(B)/Math.sin(Math.PI-A-B);
+      return fit([{x:0,y:0},{x:L,y:0},{x:t*Math.cos(A),y:-t*Math.sin(A)}],cx,cy,maxW,maxH);
+    }
+    return [];
+  }
 
-      gridLineWidth: 1,
-      axisLineWidth: 2.6,
+  function fit(points,cx,cy,maxW,maxH){
+    const xs=points.map(p=>p.x), ys=points.map(p=>p.y);
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    const scale=Math.min(maxW/Math.max(1,maxX-minX),maxH/Math.max(1,maxY-minY));
+    const mx=(minX+maxX)/2,my=(minY+maxY)/2;
+    return points.map(p=>({x:cx+(p.x-mx)*scale,y:cy+(p.y-my)*scale}));
+  }
 
-      numberFont: "15px Arial, sans-serif",
-      originFont: "17px 'Times New Roman', Times, serif",
-      axisNameFont: "italic 20px 'Times New Roman', Times, serif"
+  function centroid(pts){return {x:pts.reduce((s,p)=>s+p.x,0)/3,y:pts.reduce((s,p)=>s+p.y,0)/3};}
+  function transform(pts,tx,ty,ang,scale=1){
+    const c=centroid(pts),co=Math.cos(ang),si=Math.sin(ang);
+    return pts.map(p=>{
+      const x=(p.x-c.x)*scale,y=(p.y-c.y)*scale;
+      return {x:c.x+x*co-y*si+tx,y:c.y+x*si+y*co+ty};
+    });
+  }
+
+  function buildTriangles(){
+    triangles=[];
+    if([2,4,5].includes(current)){
+      const ref=referenceTriangle();
+      triangles.push({pts:ref,reference:true,dx:0,dy:0,angle:0,locked:true});
+      const spots=[
+        {x:-W*.32,y:-H*.18,a:.35},
+        {x:W*.34,y:-H*.16,a:-.55},
+        {x:W*.34,y:H*.2,a:1.0}
+      ];
+      spots.forEach((s,i)=>triangles.push({base:ref,dx:s.x,dy:s.y,angle:s.a,reference:false,locked:false,index:i}));
+      selectTriangle(triangles[1] || null);
+    }else{
+      selectTriangle(null);
+    }
+  }
+
+  function scatter(){
+    if(![2,4,5].includes(current)) return;
+    const spots=[{x:-W*.32,y:-H*.18,a:.35},{x:W*.34,y:-H*.16,a:-.55},{x:W*.34,y:H*.2,a:1.0}];
+    triangles.slice(1).forEach((t,i)=>Object.assign(t,{dx:spots[i].x,dy:spots[i].y,angle:spots[i].a,locked:false}));
+    selectTriangle(triangles[1] || null);
+  }
+
+  function pathTriangle(pts){
+    ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);ctx.lineTo(pts[1].x,pts[1].y);ctx.lineTo(pts[2].x,pts[2].y);ctx.closePath();
+  }
+  function drawTriangle(pts,stroke,fill,width=4,dash=[]){
+    ctx.save();ctx.setLineDash(dash);ctx.lineWidth=width;ctx.lineJoin='round';ctx.strokeStyle=stroke;ctx.fillStyle=fill;
+    pathTriangle(pts);ctx.fill();ctx.stroke();
+    pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle=stroke;ctx.fill();});
+    ctx.restore();
+  }
+  function labelPoint(p,text,color='#24334a'){
+    ctx.save();ctx.fillStyle=color;ctx.font='800 13px sans-serif';ctx.fillText(text,p.x+8,p.y-8);ctx.restore();
+  }
+  function drawAngleArc(v,p1,p2,label,radius=24){
+    let a1=Math.atan2(p1.y-v.y,p1.x-v.x),a2=Math.atan2(p2.y-v.y,p2.x-v.x);
+    let diff=((a2-a1+Math.PI*3)%(Math.PI*2))-Math.PI;
+    ctx.save();
+    ctx.strokeStyle='#7b61ff';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(v.x,v.y,radius,a1,a1+diff,diff<0);ctx.stroke();
+    const mid=a1+diff/2;
+    const tx=v.x+(radius+10)*Math.cos(mid), ty=v.y+(radius+10)*Math.sin(mid);
+    ctx.font='800 11px sans-serif';
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='rgba(255,255,255,.94)';
+    ctx.fillRect(tx-tw/2-4,ty-9,tw+8,18);
+    ctx.fillStyle='#5b44d4';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(label,tx,ty);
+    ctx.restore();
+  }
+
+  function fmtNumber(v){
+    return Number.isInteger(v) ? String(v) : String(Number(v.toFixed(2)));
+  }
+
+  function normalizeAngle(a){
+    while(a>Math.PI)a-=Math.PI*2;
+    while(a<-Math.PI)a+=Math.PI*2;
+    return a;
+  }
+
+  function selectTriangle(tr){
+    selectedTriangle = tr && !tr.locked ? tr : null;
+    const info=document.getElementById('selectedInfo');
+    if(info) info.textContent=selectedTriangle ? `주황색 삼각형 ${selectedTriangle.index+1} 선택됨` : '주황색 삼각형을 선택하세요';
+  }
+
+  function drawEdgeLabel(p1,p2,text,pts,color='#24334a'){
+    const c=centroid(pts);
+    const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+    const dx=p2.x-p1.x, dy=p2.y-p1.y, len=Math.hypot(dx,dy)||1;
+    let nx=-dy/len, ny=dx/len;
+    const d1=Math.hypot(mx+nx*18-c.x,my+ny*18-c.y);
+    const d2=Math.hypot(mx-nx*18-c.x,my-ny*18-c.y);
+    if(d2>d1){nx=-nx;ny=-ny;}
+    const x=mx+nx*18, y=my+ny*18;
+    ctx.save();
+    ctx.font='800 11px sans-serif';
+    const tw=ctx.measureText(text).width;
+    ctx.fillStyle='rgba(255,255,255,.94)';
+    ctx.fillRect(x-tw/2-4,y-9,tw+8,18);
+    ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(text,x,y);
+    ctx.restore();
+  }
+
+  function drawConditionLabels(pts,color='#24334a'){
+    if(current===2){
+      drawEdgeLabel(pts[0],pts[1],fmtNumber(params.s1),pts,color);
+      drawEdgeLabel(pts[0],pts[2],fmtNumber(params.s2),pts,color);
+      drawAngleArc(pts[0],pts[1],pts[2],`${fmtNumber(params.ang)}°`,20);
+    }else if(current===4){
+      drawEdgeLabel(pts[0],pts[1],fmtNumber(params.s1),pts,color);
+      drawEdgeLabel(pts[1],pts[2],fmtNumber(params.s2),pts,color);
+      drawEdgeLabel(pts[2],pts[0],fmtNumber(params.s3),pts,color);
+    }else if(current===5){
+      drawEdgeLabel(pts[0],pts[1],fmtNumber(params.base),pts,color);
+      drawAngleArc(pts[0],pts[1],pts[2],`${fmtNumber(params.a)}°`,20);
+      drawAngleArc(pts[1],pts[2],pts[0],`${fmtNumber(params.b)}°`,20);
+    }
+  }
+
+  function getRotationHandle(pts){
+    const c=centroid(pts);
+    const candidates=pts.map((anchor,index)=>{
+      let vx=anchor.x-c.x,vy=anchor.y-c.y;
+      const len=Math.hypot(vx,vy)||1;
+      const handle={x:c.x+vx/len*(len+34),y:c.y+vy/len*(len+34)};
+      const margin=Math.min(handle.x,handle.y,W-handle.x,H-handle.y);
+      return {center:c,anchor,handle,index,margin};
+    });
+    candidates.sort((a,b)=>b.margin-a.margin);
+    return candidates[0];
+  }
+
+  function drawRotationHandle(pts,tr){
+    const r=getRotationHandle(pts);
+    tr.rotationHandle=r;
+    ctx.save();
+    ctx.strokeStyle=tr===selectedTriangle?'#d85d25':'rgba(255,139,85,.65)';
+    ctx.lineWidth=tr===selectedTriangle?3:2;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(r.anchor.x,r.anchor.y);ctx.lineTo(r.handle.x,r.handle.y);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#fff';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(r.handle.x,r.handle.y,tr===selectedTriangle?17:15,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#d85d25';ctx.font='900 18px sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('↻',r.handle.x,r.handle.y+1);
+    ctx.restore();
+  }
+
+  function rotateSelected(degrees){
+    let tr=selectedTriangle;
+    if(!tr || tr.locked){
+      tr=triangles.slice(1).find(x=>!x.locked) || null;
+      selectTriangle(tr);
+    }
+    if(!tr)return;
+    tr.angle=normalizeAngle(tr.angle+rad(degrees));
+  }
+  function grid(){
+    ctx.save();ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#fbfdff';ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='#edf2fa';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    ctx.restore();
+  }
+
+  function drawExp1(t){
+    const base=referenceTriangle();
+    const c=centroid(base);
+    const pulse=.56+.34*(.5+.5*Math.sin(t*1.25));
+    const small=base.map(p=>({x:c.x+(p.x-c.x)*pulse,y:c.y+(p.y-c.y)*pulse}));
+    drawTriangle(base,'rgba(79,124,255,.28)','rgba(79,124,255,.035)',2,[8,7]);
+    drawTriangle(small,'#ff8b55','rgba(255,139,85,.16)',4);
+    drawAngleArc(small[0],small[1],small[2],`${params.a}°`);
+    drawAngleArc(small[1],small[2],small[0],`${params.b}°`);
+    drawAngleArc(small[2],small[0],small[1],`${params.c}°`);
+    ctx.fillStyle='#6d7a90';ctx.font='700 13px sans-serif';ctx.fillText('각 표시를 유지한 채 크기만 계속 변합니다.',18,H-18);
+  }
+
+  function drawCopies(t){
+    const ref=triangles[0]?.pts;
+    if(!ref)return;
+
+    drawTriangle(ref,'#4f7cff','rgba(79,124,255,.12)',5);
+    drawConditionLabels(ref,'#315fc9');
+
+    for(let i=1;i<triangles.length;i++){
+      const tr=triangles[i];
+      let pts=transform(tr.base,tr.dx,tr.dy,tr.angle);
+      tr.screenPts=pts;
+
+      const rc=centroid(ref), tc=centroid(pts);
+      const centerGap=dist(rc,tc);
+      const angleGap=Math.abs(normalizeAngle(tr.angle));
+
+      // 위치와 방향이 모두 가까워졌을 때만 정확히 포개고 고정한다.
+      if(!tr.locked && centerGap<24 && angleGap<rad(9)){
+        tr.dx+=rc.x-tc.x;
+        tr.dy+=rc.y-tc.y;
+        tr.angle=0;
+        tr.locked=true;
+        if(selectedTriangle===tr) selectTriangle(triangles.slice(1).find(x=>!x.locked) || null);
+        pts=transform(tr.base,tr.dx,tr.dy,tr.angle);
+      }
+
+      const isSelected=tr===selectedTriangle && !tr.locked;
+      drawTriangle(
+        pts,
+        tr.locked?'#26a269':(isSelected?'#d85d25':'#ff8b55'),
+        tr.locked?'rgba(38,162,105,.18)':(isSelected?'rgba(255,139,85,.23)':'rgba(255,139,85,.13)'),
+        tr.locked?6:(isSelected?6:4)
+      );
+
+      if(!tr.locked){
+        drawConditionLabels(pts,isSelected?'#8f3513':'#a84f25');
+        const c=centroid(pts);
+        ctx.save();
+        ctx.fillStyle=isSelected?'#8f3513':'#7d4f2d';
+        ctx.font='900 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(isSelected?'선택됨 · 이동':'탭하여 선택',c.x,c.y);
+        ctx.restore();
+        drawRotationHandle(pts,tr);
+      }
+    }
+  }
+
+  function drawExp3(t){
+    const base=params.base, side=params.side, theta=rad(params.ang);
+    const roots=(params.roots && params.roots.length)
+      ? params.roots
+      : solveExperiment3(base,side,params.ang);
+
+    if(!roots.length) return;
+
+    // 수학 좌표: A=(0,0), B=(base,0), 각의 반직선 위 점 P=(t cosθ, t sinθ)
+    const A0={x:0,y:0};
+    const B0={x:base,y:0};
+    const possible=roots.map(v=>({x:v*Math.cos(theta),y:v*Math.sin(theta),t:v}));
+    const targetAngles=possible.map(p=>Math.atan2(p.y-B0.y,p.x-B0.x)).sort((a,b)=>a-b);
+
+    let swingMin, swingMax;
+    if(targetAngles.length===2){
+      swingMin=targetAngles[0]-.08;
+      swingMax=targetAngles[1]+.08;
+    }else{
+      swingMin=targetAngles[0]-.42;
+      swingMax=targetAngles[0]+.42;
+    }
+
+    const swingMid=(swingMin+swingMax)/2;
+    const swingHalf=(swingMax-swingMin)/2;
+    const movingAngle=swingMid+swingHalf*Math.sin(t*1.8);
+    const moving0={
+      x:B0.x+side*Math.cos(movingAngle),
+      y:B0.y+side*Math.sin(movingAngle)
     };
 
-    const state = {
-      problems: [],
-      currentIndex: 0,
-      score: 0,
-      timerTenths: CONFIG.questionTimeTenths,
-      timerId: null,
-      acceptingInput: false,
-      selectedPoint: null,
-      correctPoint: null,
-      gameEnded: false,
-      correctCount: 0,
-      system: null,
-      transitionTimeoutId: null
-    };
+    const rayLength=Math.max(base,side,...roots)*1.18;
+    const ray0={x:rayLength*Math.cos(theta),y:rayLength*Math.sin(theta)};
 
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      const pixelRatio = window.devicePixelRatio || 1;
-
-      canvas.width = Math.round(rect.width * pixelRatio);
-      canvas.height = Math.round(rect.height * pixelRatio);
-
-      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-
-      return {
-        width: rect.width,
-        height: rect.height
-      };
+    // 실제로 화면에 그릴 모든 점을 기준으로 자동 확대/축소한다.
+    const fitPoints=[A0,B0,ray0,moving0,...possible];
+    for(let i=0;i<=24;i++){
+      const a=swingMin+(swingMax-swingMin)*(i/24);
+      fitPoints.push({x:B0.x+side*Math.cos(a),y:B0.y+side*Math.sin(a)});
     }
 
-    function createCoordinateSystem(width, height) {
-      const left = CONFIG.padding;
-      const right = width - CONFIG.padding;
-      const top = CONFIG.padding;
-      const bottom = height - CONFIG.padding;
+    let minX=Math.min(...fitPoints.map(p=>p.x));
+    let maxX=Math.max(...fitPoints.map(p=>p.x));
+    let minY=Math.min(...fitPoints.map(p=>p.y));
+    let maxY=Math.max(...fitPoints.map(p=>p.y));
 
-      const graphWidth = right - left;
-      const graphHeight = bottom - top;
+    const rangeX=Math.max(1e-6,maxX-minX);
+    const rangeY=Math.max(1e-6,maxY-minY);
+    const padX=72, padTop=58, padBottom=48;
+    const usableW=Math.max(120,W-padX*2);
+    const usableH=Math.max(100,H-padTop-padBottom);
+    const scale=Math.min(usableW/rangeX,usableH/rangeY)*.92;
+    const modelCX=(minX+maxX)/2;
+    const modelCY=(minY+maxY)/2;
+    const screenCX=W/2;
+    const screenCY=padTop+usableH*.52;
 
-      const xUnit = graphWidth / (CONFIG.maxX - CONFIG.minX);
-      const yUnit = graphHeight / (CONFIG.maxY - CONFIG.minY);
+    const map=p=>({
+      x:screenCX+(p.x-modelCX)*scale,
+      y:screenCY-(p.y-modelCY)*scale
+    });
 
-      function toCanvasX(x) {
-        return left + (x - CONFIG.minX) * xUnit;
-      }
+    const A=map(A0), B=map(B0), rayEnd=map(ray0), moving=map(moving0);
+    const possibleScreen=possible.map(map);
 
-      function toCanvasY(y) {
-        return top + (CONFIG.maxY - y) * yUnit;
-      }
+    ctx.save();
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
 
-      function toMathX(canvasX) {
-        return CONFIG.minX + (canvasX - left) / xUnit;
-      }
+    // 밑변
+    ctx.strokeStyle='#4f7cff';
+    ctx.lineWidth=6;
+    ctx.beginPath();
+    ctx.moveTo(A.x,A.y);
+    ctx.lineTo(B.x,B.y);
+    ctx.stroke();
 
-      function toMathY(canvasY) {
-        return CONFIG.maxY - (canvasY - top) / yUnit;
-      }
+    // 입력된 각을 나타내는 반직선
+    ctx.strokeStyle='rgba(79,124,255,.42)';
+    ctx.lineWidth=3;
+    ctx.setLineDash([10,8]);
+    ctx.beginPath();
+    ctx.moveTo(A.x,A.y);
+    ctx.lineTo(rayEnd.x,rayEnd.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-      return {
-        left,
-        right,
-        top,
-        bottom,
-        graphWidth,
-        graphHeight,
-        xUnit,
-        yUnit,
-        toCanvasX,
-        toCanvasY,
-        toMathX,
-        toMathY
-      };
-    }
+    drawAngleArc(A,B,rayEnd,`${fmtNumber(params.ang)}°`,24);
 
-    function drawBackground(width, height) {
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = CONFIG.backgroundColor;
-      ctx.fillRect(0, 0, width, height);
-    }
-
-    function drawGrid(system) {
-      const { left, right, top, bottom, toCanvasX, toCanvasY } = system;
-
-      ctx.save();
-      ctx.strokeStyle = CONFIG.gridColor;
-      ctx.lineWidth = CONFIG.gridLineWidth;
-
-      for (let x = CONFIG.minX; x <= CONFIG.maxX; x++) {
-        if (x === 0) continue;
-        const cx = toCanvasX(x);
-        ctx.beginPath();
-        ctx.moveTo(cx, top);
-        ctx.lineTo(cx, bottom);
-        ctx.stroke();
-      }
-
-      for (let y = CONFIG.minY; y <= CONFIG.maxY; y++) {
-        if (y === 0) continue;
-        const cy = toCanvasY(y);
-        ctx.beginPath();
-        ctx.moveTo(left, cy);
-        ctx.lineTo(right, cy);
-        ctx.stroke();
-      }
-
-      ctx.restore();
-    }
-
-    function drawArrowHead(tipX, tipY, direction) {
-      const arrowLength = 13;
-      const arrowHalfWidth = 6;
-
-      ctx.save();
-      ctx.fillStyle = CONFIG.axisColor;
+    // 가능한 삼각형들을 점선으로 표시
+    possibleScreen.forEach((p,i)=>{
+      ctx.strokeStyle='rgba(38,162,105,.58)';
+      ctx.lineWidth=3;
+      ctx.setLineDash([7,6]);
       ctx.beginPath();
-
-      if (direction === "right") {
-        ctx.moveTo(tipX, tipY);
-        ctx.lineTo(tipX - arrowLength, tipY - arrowHalfWidth);
-        ctx.lineTo(tipX - arrowLength, tipY + arrowHalfWidth);
-      }
-
-      if (direction === "up") {
-        ctx.moveTo(tipX, tipY);
-        ctx.lineTo(tipX - arrowHalfWidth, tipY + arrowLength);
-        ctx.lineTo(tipX + arrowHalfWidth, tipY + arrowLength);
-      }
-
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function drawAxes(system) {
-      const { left, right, top, bottom, toCanvasX, toCanvasY } = system;
-      const originX = toCanvasX(0);
-      const originY = toCanvasY(0);
-
-      ctx.save();
-      ctx.strokeStyle = CONFIG.axisColor;
-      ctx.lineWidth = CONFIG.axisLineWidth;
-      ctx.lineCap = "round";
-
-      ctx.beginPath();
-      ctx.moveTo(left, originY);
-      ctx.lineTo(right, originY);
+      ctx.moveTo(A.x,A.y);
+      ctx.lineTo(p.x,p.y);
+      ctx.lineTo(B.x,B.y);
       ctx.stroke();
+      ctx.setLineDash([]);
 
+      ctx.fillStyle='#26a269';
       ctx.beginPath();
-      ctx.moveTo(originX, bottom);
-      ctx.lineTo(originX, top);
-      ctx.stroke();
-
-      ctx.restore();
-
-      drawArrowHead(right, originY, "right");
-      drawArrowHead(originX, top, "up");
-    }
-
-    function drawXAxisNumbers(system) {
-      const { toCanvasX, toCanvasY } = system;
-      const originY = toCanvasY(0);
-
-      ctx.save();
-      ctx.fillStyle = CONFIG.textColor;
-      ctx.font = CONFIG.numberFont;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-
-      for (let x = -9; x <= 9; x++) {
-        if (x === 0) continue;
-        ctx.fillText(String(x), toCanvasX(x), originY + 8);
-      }
-
-      ctx.restore();
-    }
-
-    function drawYAxisNumbers(system) {
-      const { toCanvasX, toCanvasY } = system;
-      const originX = toCanvasX(0);
-
-      ctx.save();
-      ctx.fillStyle = CONFIG.textColor;
-      ctx.font = CONFIG.numberFont;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-
-      for (let y = -9; y <= 9; y++) {
-        if (y === 0) continue;
-        ctx.fillText(String(y), originX - 8, toCanvasY(y));
-      }
-
-      ctx.restore();
-    }
-
-    function drawOriginLabel(system) {
-      const { toCanvasX, toCanvasY } = system;
-      const originX = toCanvasX(0);
-      const originY = toCanvasY(0);
-
-      ctx.save();
-      ctx.fillStyle = CONFIG.textColor;
-      ctx.font = CONFIG.originFont;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "top";
-      ctx.fillText("O", originX - 7, originY + 7);
-      ctx.restore();
-    }
-
-    function drawAxisNames(system) {
-      const { right, top, toCanvasX, toCanvasY } = system;
-      const originX = toCanvasX(0);
-      const originY = toCanvasY(0);
-
-      ctx.save();
-      ctx.fillStyle = CONFIG.textColor;
-      ctx.font = CONFIG.axisNameFont;
-
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillText("x", right, originY + 12);
-
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      ctx.fillText("y", originX - 10, top + 7);
-
-      ctx.restore();
-    }
-
-    function drawMarker(point, color, withOutline = false) {
-      if (!point || !state.system) return;
-
-      const { toCanvasX, toCanvasY } = state.system;
-      const cx = toCanvasX(point.x);
-      const cy = toCanvasY(point.y);
-
-      ctx.save();
-
-      if (withOutline) {
-        ctx.beginPath();
-        ctx.arc(cx, cy, 10, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(37, 99, 235, 0.12)";
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, 10, 0, Math.PI * 2);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
-      }
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-      ctx.fillStyle = color;
+      ctx.arc(p.x,p.y,7,0,Math.PI*2);
       ctx.fill();
 
-      ctx.restore();
+      ctx.fillStyle='#237a53';
+      ctx.font='800 12px sans-serif';
+      ctx.textAlign='left';
+      ctx.textBaseline='alphabetic';
+      ctx.fillText(`만날 수 있는 자리 ${i+1}`,p.x+10,p.y-10);
+    });
+
+    // 주황색 변이 움직이는 범위
+    ctx.strokeStyle='rgba(255,139,85,.28)';
+    ctx.lineWidth=2;
+    ctx.setLineDash([5,7]);
+    ctx.beginPath();
+    for(let i=0;i<=36;i++){
+      const a=swingMin+(swingMax-swingMin)*(i/36);
+      const p=map({x:B0.x+side*Math.cos(a),y:B0.y+side*Math.sin(a)});
+      if(i===0)ctx.moveTo(p.x,p.y);
+      else ctx.lineTo(p.x,p.y);
     }
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-    function drawCurrentMarkers() {
-      if (state.selectedPoint) {
-        drawMarker(state.selectedPoint, state.selectedPoint.color, false);
-      }
+    // 흔들리는 두 번째 변
+    ctx.strokeStyle='#ff8b55';
+    ctx.lineWidth=6;
+    ctx.beginPath();
+    ctx.moveTo(B.x,B.y);
+    ctx.lineTo(moving.x,moving.y);
+    ctx.stroke();
 
-      if (state.correctPoint) {
-        drawMarker(state.correctPoint, CONFIG.correctColor, true);
-      }
+    ctx.fillStyle='#ff8b55';
+    ctx.beginPath();
+    ctx.arc(moving.x,moving.y,7,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    // 길이 표시
+    drawEdgeLabel(A,B,fmtNumber(base),[A,B,possibleScreen[0]],'#315fc9');
+    const sideLabelPoint=possibleScreen[possibleScreen.length-1];
+    drawEdgeLabel(B,sideLabelPoint,fmtNumber(side),[A,B,sideLabelPoint],'#a84f25');
+
+    labelPoint(A,'A');
+    labelPoint(B,'B');
+
+    ctx.save();
+    ctx.fillStyle='#6d7a90';
+    ctx.font='700 13px sans-serif';
+    ctx.textAlign='left';
+    ctx.fillText('주황색 변의 끝이 초록색 위치와 만나는 모습을 관찰하세요.',18,H-18);
+    ctx.restore();
+  }
+
+  function drawAssembly(t){
+    const ref=referenceTriangle();
+    const progress=clamp(t/1.6,0,1);
+    if(progress<1){
+      const c=centroid(ref);
+      ref.forEach((p,i)=>{
+        const q=ref[(i+1)%3];
+        const off=(1-progress)*80;
+        const mx=(p.x+q.x)/2,my=(p.y+q.y)/2;
+        const nx=-(q.y-p.y),ny=q.x-p.x,nl=Math.hypot(nx,ny)||1;
+        const ox=nx/nl*off*(i%2?1:-1),oy=ny/nl*off*(i%2?1:-1);
+        ctx.strokeStyle=i===0?'#4f7cff':'#ff8b55';ctx.lineWidth=6;ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(p.x+ox,q.y? p.y+oy:p.y);ctx.lineTo(q.x+ox,q.y+oy);ctx.stroke();
+      });
+    }else drawCopies(t);
+  }
+
+  function animate(now){
+    resize();
+    grid();
+    const t=running?(now-startTime)/1000:(pauseTime-startTime)/1000;
+    if(current===1&&Object.keys(params).length) drawExp1(t);
+    else if(current===3&&Object.keys(params).length) drawExp3(t);
+    else if([2,4,5].includes(current)&&triangles.length){
+      if((current===4||current===5) && t<1.7) drawAssembly(t);
+      else drawCopies(t);
+    } else {
+      ctx.fillStyle='#8190a8';ctx.font='800 18px sans-serif';ctx.textAlign='center';
+      ctx.fillText('위에서 실험을 선택하고 생성하기를 눌러 주세요.',W/2,H/2);
+      ctx.textAlign='start';
     }
+    requestAnimationFrame(animate);
+  }
 
-    function drawCoordinatePlane() {
-      const { width, height } = resizeCanvas();
-      state.system = createCoordinateSystem(width, height);
+  function pointInTriangle(p,a,b,c){
+    const area=(p1,p2,p3)=>(p1.x*(p2.y-p3.y)+p2.x*(p3.y-p1.y)+p3.x*(p1.y-p2.y))/2;
+    const A=Math.abs(area(a,b,c)),A1=Math.abs(area(p,b,c)),A2=Math.abs(area(a,p,c)),A3=Math.abs(area(a,b,p));
+    return Math.abs(A-(A1+A2+A3))<2;
+  }
+  function pointerPos(e){
+    const r=canvas.getBoundingClientRect();
+    const pt=e.touches?e.touches[0]:e;
+    return {x:pt.clientX-r.left,y:pt.clientY-r.top};
+  }
+  function down(e){
+    if(![2,4,5].includes(current))return;
+    const p=pointerPos(e);
 
-      drawBackground(width, height);
-      drawGrid(state.system);
-      drawAxes(state.system);
-      drawXAxisNumbers(state.system);
-      drawYAxisNumbers(state.system);
-      drawOriginLabel(state.system);
-      drawAxisNames(state.system);
-      drawCurrentMarkers();
-    }
-
-    function randomInt(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    function generateProblems() {
-      const used = new Set();
-      const problems = [];
-
-      while (problems.length < CONFIG.totalQuestions) {
-        const x = randomInt(CONFIG.playableMin, CONFIG.playableMax);
-        const y = randomInt(CONFIG.playableMin, CONFIG.playableMax);
-        const key = `${x},${y}`;
-
-        if (used.has(key)) continue;
-
-        used.add(key);
-        problems.push({ x, y });
-      }
-
-      return problems;
-    }
-
-    function clearTimer() {
-      if (state.timerId) {
-        clearInterval(state.timerId);
-        state.timerId = null;
-      }
-    }
-
-    function clearTransitionTimeout() {
-      if (state.transitionTimeoutId) {
-        clearTimeout(state.transitionTimeoutId);
-        state.transitionTimeoutId = null;
-      }
-    }
-
-    function updateStatus() {
-      const solvedCount = state.currentIndex;
-      const remainingCount = CONFIG.totalQuestions - state.currentIndex;
-
-      timeLeftEl.textContent = `${(state.timerTenths / 10).toFixed(1)}초`;
-      solvedCountEl.textContent = String(solvedCount);
-      scoreEl.textContent = `${state.score}점`;
-      remainingCountEl.textContent = String(remainingCount);
-    }
-
-    function setFeedback(message = "", type = "") {
-      feedbackEl.textContent = message;
-      feedbackEl.className = "feedback";
-      if (type) {
-        feedbackEl.classList.add(type);
-      }
-    }
-
-    function showQuestion() {
-      const problem = state.problems[state.currentIndex];
-      questionNumberEl.textContent = `문제 ${state.currentIndex + 1} / 10`;
-      questionTextEl.textContent = `점 (${problem.x}, ${problem.y})를 좌표평면에 찍으세요.`;
-    }
-
-    function startTimer() {
-      clearTimer();
-
-      state.timerId = setInterval(() => {
-        state.timerTenths -= 1;
-
-        if (state.timerTenths <= 0) {
-          state.timerTenths = 0;
-          updateStatus();
-          handleTimeout();
-          return;
-        }
-
-        updateStatus();
-      }, 100);
-    }
-
-    function startQuestion() {
-      if (state.currentIndex >= CONFIG.totalQuestions) {
-        endGame();
+    // 큰 터치 영역으로 회전 손잡이를 먼저 감지한다.
+    for(let i=triangles.length-1;i>=1;i--){
+      const tr=triangles[i]; if(tr.locked)continue;
+      const pts=transform(tr.base,tr.dx,tr.dy,tr.angle);
+      const rh=getRotationHandle(pts);
+      if(dist(p,rh.handle)<=30){
+        selectTriangle(tr);
+        drag={
+          mode:'rotate',
+          tr,
+          center:rh.center,
+          startPointerAngle:Math.atan2(p.y-rh.center.y,p.x-rh.center.x),
+          startTriangleAngle:tr.angle
+        };
+        canvas.setPointerCapture?.(e.pointerId);
+        e.preventDefault();
         return;
       }
-
-      state.timerTenths = CONFIG.questionTimeTenths;
-      state.acceptingInput = true;
-      state.selectedPoint = null;
-      state.correctPoint = null;
-
-      showQuestion();
-      updateStatus();
-      setFeedback("");
-      resultBoxEl.textContent = "";
-      drawCoordinatePlane();
-      startTimer();
     }
 
-    function scheduleNextQuestion(delayMs) {
-      clearTransitionTimeout();
-      state.transitionTimeoutId = setTimeout(() => {
-        state.currentIndex += 1;
-        startQuestion();
-      }, delayMs);
-    }
-
-    function handleCorrect(point) {
-      clearTimer();
-      state.acceptingInput = false;
-
-      const gainedScore = state.timerTenths;
-      state.score += gainedScore;
-      state.correctCount += 1;
-
-      state.selectedPoint = {
-        x: point.x,
-        y: point.y,
-        color: CONFIG.correctColor
-      };
-      state.correctPoint = null;
-
-      drawCoordinatePlane();
-      updateStatus();
-      setFeedback(`정답! ${gainedScore}점을 얻었습니다.`, "correct");
-      scheduleNextQuestion(900);
-    }
-
-    function handleWrong(point) {
-      clearTimer();
-      state.acceptingInput = false;
-
-      const answer = state.problems[state.currentIndex];
-
-      state.selectedPoint = {
-        x: point.x,
-        y: point.y,
-        color: CONFIG.wrongColor
-      };
-      state.correctPoint = {
-        x: answer.x,
-        y: answer.y
-      };
-
-      drawCoordinatePlane();
-      updateStatus();
-      setFeedback(`오답! 정답은 (${answer.x}, ${answer.y})입니다.`, "wrong");
-      scheduleNextQuestion(2000);
-    }
-
-    function handleTimeout() {
-      clearTimer();
-      state.acceptingInput = false;
-
-      const answer = state.problems[state.currentIndex];
-      state.selectedPoint = null;
-      state.correctPoint = {
-        x: answer.x,
-        y: answer.y
-      };
-
-      drawCoordinatePlane();
-      setFeedback(`시간 종료! 정답은 (${answer.x}, ${answer.y})입니다.`, "timeout");
-      scheduleNextQuestion(2000);
-    }
-
-    function getLeaderboard() {
-      try {
-        const raw = localStorage.getItem(LEADERBOARD_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (error) {
-        return [];
-      }
-    }
-
-    function saveLeaderboard(list) {
-      localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(list));
-    }
-
-    function formatPlayedTime(isoString) {
-      const date = new Date(isoString);
-
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, "0");
-      const dd = String(date.getDate()).padStart(2, "0");
-      const hh = String(date.getHours()).padStart(2, "0");
-      const min = String(date.getMinutes()).padStart(2, "0");
-
-      return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
-    }
-
-    function renderLeaderboard() {
-      const leaderboard = getLeaderboard();
-      leaderboardBody.innerHTML = "";
-
-      if (leaderboard.length === 0) {
-        leaderboardEmpty.style.display = "block";
-        leaderboardTableWrap.style.display = "none";
+    // 삼각형 내부는 선택과 위치 이동에 사용한다.
+    for(let i=triangles.length-1;i>=1;i--){
+      const tr=triangles[i]; if(tr.locked)continue;
+      const pts=transform(tr.base,tr.dx,tr.dy,tr.angle);
+      if(pointInTriangle(p,...pts)){
+        selectTriangle(tr);
+        drag={mode:'move',tr,last:p};
+        canvas.setPointerCapture?.(e.pointerId);
+        e.preventDefault();
         return;
       }
-
-      leaderboardEmpty.style.display = "none";
-      leaderboardTableWrap.style.display = "block";
-
-      leaderboard.forEach((item, index) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${item.score}점</td>
-          <td>${item.correctCount} / 10</td>
-          <td>${formatPlayedTime(item.playedAt)}</td>
-        `;
-        leaderboardBody.appendChild(tr);
-      });
     }
+  }
 
-    function addScoreToLeaderboard(score, correctCount) {
-      const leaderboard = getLeaderboard();
-
-      leaderboard.push({
-        score,
-        correctCount,
-        playedAt: new Date().toISOString()
-      });
-
-      leaderboard.sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score;
-        if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
-        return new Date(a.playedAt) - new Date(b.playedAt);
-      });
-
-      const trimmed = leaderboard.slice(0, 10);
-      saveLeaderboard(trimmed);
-      renderLeaderboard();
+  function move(e){
+    if(!drag)return;
+    const p=pointerPos(e);
+    if(drag.mode==='rotate'){
+      const pointerAngle=Math.atan2(p.y-drag.center.y,p.x-drag.center.x);
+      drag.tr.angle=normalizeAngle(drag.startTriangleAngle+(pointerAngle-drag.startPointerAngle));
+    }else{
+      drag.tr.dx+=p.x-drag.last.x;
+      drag.tr.dy+=p.y-drag.last.y;
+      drag.last=p;
     }
+    e.preventDefault();
+  }
 
-    function endGame() {
-      clearTimer();
-      clearTransitionTimeout();
-      state.acceptingInput = false;
-      state.gameEnded = true;
+  function up(e){
+    if(drag && e?.pointerId!==undefined) canvas.releasePointerCapture?.(e.pointerId);
+    drag=null;
+  }
+  canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
 
-      questionNumberEl.textContent = "게임 종료";
-      questionTextEl.textContent = "10문제를 모두 풀었습니다.";
-      timeLeftEl.textContent = "0.0초";
-      solvedCountEl.textContent = String(CONFIG.totalQuestions);
-      remainingCountEl.textContent = "0";
-      scoreEl.textContent = `${state.score}점`;
+  document.querySelectorAll('[data-run]').forEach(b=>b.addEventListener('click',()=>runExperiment(Number(b.dataset.run))));
+  document.querySelectorAll('.card').forEach(c=>c.addEventListener('click',e=>{if(!e.target.matches('input,button'))setActive(Number(c.dataset.exp));}));
+  document.getElementById('replayBtn').addEventListener('click',()=>runExperiment(current));
+  document.getElementById('scatterBtn').addEventListener('click',scatter);
+  document.getElementById('rotateLeft15').addEventListener('click',()=>rotateSelected(-15));
+  document.getElementById('rotateRight15').addEventListener('click',()=>rotateSelected(15));
+  document.getElementById('rotateLeft5').addEventListener('click',()=>rotateSelected(-5));
+  document.getElementById('rotateRight5').addEventListener('click',()=>rotateSelected(5));
+  document.getElementById('resetBtn').addEventListener('click',()=>{
+    document.querySelectorAll('textarea').forEach(t=>t.value='');
+    setActive(1);triangles=[];params={};status.textContent='세 각을 입력한 뒤 생성하기를 눌러 보세요.';
+  });
+  let pauseTime=0;
+  pauseBtn.addEventListener('click',()=>{
+    if(running){pauseTime=performance.now();running=false;pauseBtn.textContent='애니메이션 계속';}
+    else{startTime+=performance.now()-pauseTime;running=true;pauseBtn.textContent='애니메이션 멈춤';}
+  });
 
-      setFeedback("", "");
-      resultBoxEl.textContent = `최종 점수: ${state.score}점 · 정답 ${state.correctCount}문제`;
-      restartButton.disabled = false;
-
-      addScoreToLeaderboard(state.score, state.correctCount);
-    }
-
-    function startGame() {
-      clearTimer();
-      clearTransitionTimeout();
-
-      state.problems = generateProblems();
-      state.currentIndex = 0;
-      state.score = 0;
-      state.timerTenths = CONFIG.questionTimeTenths;
-      state.acceptingInput = false;
-      state.selectedPoint = null;
-      state.correctPoint = null;
-      state.gameEnded = false;
-      state.correctCount = 0;
-
-      restartButton.disabled = true;
-      resultBoxEl.textContent = "";
-
-      startQuestion();
-    }
-
-    function getSnappedPointFromEvent(event) {
-      if (!state.system) return null;
-
-      const rect = canvas.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
-      const clickY = event.clientY - rect.top;
-
-      const { left, right, top, bottom, toMathX, toMathY } = state.system;
-
-      if (clickX < left || clickX > right || clickY < top || clickY > bottom) {
-        return null;
-      }
-
-      const x = Math.round(toMathX(clickX));
-      const y = Math.round(toMathY(clickY));
-
-      return {
-        x: Math.max(CONFIG.minX, Math.min(CONFIG.maxX, x)),
-        y: Math.max(CONFIG.minY, Math.min(CONFIG.maxY, y))
-      };
-    }
-
-    canvas.addEventListener("click", (event) => {
-      if (!state.acceptingInput || state.gameEnded) return;
-
-      const point = getSnappedPointFromEvent(event);
-      if (!point) return;
-
-      const answer = state.problems[state.currentIndex];
-
-      if (point.x === answer.x && point.y === answer.y) {
-        handleCorrect(point);
-      } else {
-        handleWrong(point);
-      }
+  // 저장 권한이 허용된 브라우저에서는 관찰 기록을 자동 저장한다.
+  document.querySelectorAll('textarea').forEach(t=>{
+    try{
+      const saved=localStorage.getItem('triangleLab_'+t.id);
+      if(saved!==null)t.value=saved;
+    }catch(err){}
+    t.addEventListener('input',()=>{
+      try{localStorage.setItem('triangleLab_'+t.id,t.value);}catch(err){}
     });
+  });
 
-    restartButton.addEventListener("click", () => {
-      startGame();
-    });
-
-    clearLeaderboardButton.addEventListener("click", () => {
-      localStorage.removeItem(LEADERBOARD_KEY);
-      renderLeaderboard();
-    });
-
-    window.addEventListener("resize", () => {
-      drawCoordinatePlane();
-    });
-
-    drawCoordinatePlane();
-    renderLeaderboard();
-    startGame();
-  </script>
+  resize();
+  runExperiment(1);
+  requestAnimationFrame(animate);
+})();
+</script>
 </body>
 </html>
